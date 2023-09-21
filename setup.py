@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(
-    name='clickhouse orm extended',
+    name='clickhouse_orm_extended',
     version='2.1.4a0',
     author='Ivan Alexeev',
     author_email='ivan_alexeev@realytics.team',
