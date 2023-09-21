@@ -722,6 +722,25 @@ class Model(metaclass=ModelBase):
         return cls._system
 
 
+class RemoteModel(Model):
+
+    @classmethod
+    def create_table_sql(cls, db):
+        '''
+        Returns the SQL statement for creating a table for this model.
+        '''
+        if db.cluster_name is not None:
+            parts = ["CREATE TABLE IF NOT EXISTS `%s`.`%s` ON CLUSTER '%s' AS %s" % (db.db_name,
+                                                                                     cls.table_name(),
+                                                                                     db.cluster_name,
+                                                                                     cls.engine.create_table_sql(db))]
+        else:
+            parts = ['CREATE TABLE IF NOT EXISTS `%s`.`%s` AS %s' % (db.db_name,
+                                                                     cls.table_name(),
+                                                                     cls.engine.create_table_sql(db))]
+        return ' '.join(parts)
+
+
 class BufferModel(Model):
 
     @classmethod
