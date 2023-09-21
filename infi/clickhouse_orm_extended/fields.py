@@ -357,10 +357,10 @@ class HierarchicalUInt16Field(BaseIntField):
     db_type = 'UInt16 HIERARCHICAL'
 
 
-class HierarchicalUInt8Field(BaseIntField):
+class HierarchicalUInt16Field(BaseIntField):
 
     min_value = 0
-    max_value = 2**8 - 1
+    max_value = 2**16 - 1
     db_type = 'UInt16 HIERARCHICAL'
 
 

@@ -87,7 +87,7 @@ class Database(object):
 
     def __init__(self, db_name, db_url='http://localhost:8123/',
                  username=None, password=None, readonly=False, autocreate=True,
-                 timeout=60, verify_ssl_cert=True, log_statements=False):
+                 timeout=60, verify_ssl_cert=True, log_statements=False, cluster_name=None):
         '''
         Initializes a database instance. Unless it's readonly, the database will be
         created on the ClickHouse server if it does not already exist.
@@ -108,6 +108,7 @@ class Database(object):
         self.timeout = timeout
         self.request_session = requests.Session()
         self.request_session.verify = verify_ssl_cert
+        self.cluster_name = cluster_name
         if username:
             self.request_session.auth = (username, password or '')
         self.log_statements = log_statements
@@ -153,6 +154,31 @@ class Database(object):
             raise DatabaseException("%s class must define an engine" % model_class.__name__)
         self._send(model_class.create_table_sql(self))
 
+    def reload_dictionary(self, model_class):
+        '''
+        Reloads a dictionary for the given model class.
+        '''
+        self._send(model_class.reload_dictionary(self))
+
+    
+    def create_dictionary(self, model_class):
+        '''
+        Creates a table for the given model class, if it does not exist already.
+        '''
+        if getattr(model_class, 'source') is None:
+            raise DatabaseException("%s class must define an source" % model_class.__name__)
+        if getattr(model_class, 'lifetime') is None:
+            raise DatabaseException("%s class must define an lifetime" % model_class.__name__)
+        if getattr(model_class, 'layout') is None:
+            raise DatabaseException("%s class must define an layout" % model_class.__name__)
+        self._send(model_class.create_dictionary_sql(self))
+    
+    def drop_dictionary(self, model_class):
+        '''
+        Drops the database table of the given model class, if it exists.
+        '''
+        self._send(model_class.drop_dictionary_sql(self))
+
     def drop_table(self, model_class):
         '''
         Drops the database table of the given model class, if it exists.
@@ -167,7 +193,7 @@ class Database(object):
         Note that this only checks for existence of a table with the expected name.
         '''
         sql = "SELECT count() FROM system.tables WHERE database = '%s' AND name = '%s'"
-        r = self._send(sql % (self.db_name, model_class.table_name()))
+        r = self._send(sql % (self.db_name,  model_class.table_name()))
         return r.text.strip() == '1'
 
     def get_model_for_table(self, table_name, system_table=False):
@@ -254,7 +280,7 @@ class Database(object):
         - `model_class`: the model to count.
         - `conditions`: optional SQL conditions (contents of the WHERE clause).
         '''
-        from infi.clickhouse_orm_extended.query import Q
+        from infi.clickhouse_orm.query import Q
         query = 'SELECT count() FROM $table'
         if conditions:
             if isinstance(conditions, Q):
@@ -311,7 +337,7 @@ class Database(object):
         The result is a namedtuple containing `objects` (list), `number_of_objects`,
         `pages_total`, `number` (of the current page), and `page_size`.
         '''
-        from infi.clickhouse_orm_extended.query import Q
+        from infi.clickhouse_orm.query import Q
         count = self.count(model_class, conditions)
         pages_total = int(ceil(count / float(page_size)))
         if page_num == -1:

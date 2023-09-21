@@ -1,10 +1,89 @@
 from __future__ import unicode_literals
+from dataclasses import dataclass
 
 import logging
 
 from .utils import comma_join, get_subclass_names
 
 logger = logging.getLogger('clickhouse_orm')
+
+
+@dataclass
+class SourceClickhouse:
+    """
+    Source for Clickhouse dictionary
+    """
+    host: str
+    port: int
+    table: str
+    user: str
+    password: str
+    db: str
+
+    def create_sql(self):
+        sql = "SOURCE(CLICKHOUSE(HOST '%s' PORT %d TABLE '%s' USER '%s' PASSWORD '%s' DB '%s'))" % (self.host, self.port,
+                                                                                          self.table, self.user,
+                                                                                          self.password, self.db)
+        return sql
+
+
+@dataclass
+class SourcePostgreSQL(SourceClickhouse):
+    """
+    Source for PostgreSQL table or dictionary
+    """
+    def create_sql(self):
+        sql = "SOURCE(POSTGRESQL(DB '%s' PORT %d HOST '%s' USER '%s' TABLE '%s' PASSWORD '%s'))" % (self.db, self.port,
+                                                                                          self.host, self.user,
+                                                                                          self.table, self.password)
+        return sql
+
+
+@dataclass
+class HashedDictionaryLayout:
+    """
+    A layout of a dictionary.
+    """
+
+    def create_sql(self):
+        sql = 'LAYOUT(HASHED())'
+        return sql
+
+
+@dataclass
+class ComplexKeyHashedDictionaryLayout:
+    """
+    A layout of a dictionary.
+    """
+
+    def create_sql(self):
+        sql = 'LAYOUT(COMPLEX_KEY_HASHED())'
+        return sql
+
+
+@dataclass
+class FlatDictionaryLayout:
+    """
+    A layout of a dictionary.
+    """
+
+    def create_sql(self):
+        sql = 'LAYOUT(FLAT())'
+        return sql
+
+
+class DictionaryLifetime:
+    """
+    A lifetime of a materialized view.
+    """
+
+    def __init__(self, min_sec: int = 0, max_sec: int = 3600):
+        self.min_sec = min_sec
+        self.max_sec = max_sec
+
+    def create_sql(self):
+        sql = 'LIFETIME(MIN %d MAX %d)' % (self.min_sec, self.max_sec)
+        return sql
 
 
 class Engine(object):
@@ -29,6 +108,40 @@ class Memory(Engine):
 
     def create_table_sql(self, db):
         return 'Memory'
+
+
+class PostgreSQL(Engine):
+
+    def __init__(self, host, port, db, table, user, password):
+        self.host = host
+        self.port = port
+        self.db = db
+        self.table = table
+        self.user = user
+        self.password = password
+
+    def create_table_sql(self, db):
+        sql = "PostgreSQL('%s:%d','%s','%s','%s','%s')" % (self.host, self.port,
+                                                           self.db, self.table,
+                                                           self.user, self.password)
+        return sql
+
+
+class RemoteClickhouse(Engine):
+
+    def __init__(self, host, port, db, table, user, password):
+        self.host = host
+        self.port = port
+        self.db = db
+        self.table = table
+        self.user = user
+        self.password = password
+
+    def create_table_sql(self, db):
+        sql = "remote('%s:%d','%s','%s','%s','%s')" % (self.host, self.port,
+                                                       self.db, self.table,
+                                                       self.user, self.password)
+        return sql
 
 
 class MergeTree(Engine):

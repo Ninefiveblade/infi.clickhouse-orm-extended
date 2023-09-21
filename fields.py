@@ -343,6 +343,27 @@ class HierarchicalUInt64Field(BaseIntField):
     db_type = 'UInt64 HIERARCHICAL'
 
 
+class HierarchicalUInt32Field(BaseIntField):
+
+    min_value = 0
+    max_value = 2**32 - 1
+    db_type = 'UInt32 HIERARCHICAL'
+
+
+class HierarchicalUInt16Field(BaseIntField):
+
+    min_value = 0
+    max_value = 2**16 - 1
+    db_type = 'UInt16 HIERARCHICAL'
+
+
+class HierarchicalUInt16Field(BaseIntField):
+
+    min_value = 0
+    max_value = 2**16 - 1
+    db_type = 'UInt16 HIERARCHICAL'
+
+
 class Int8Field(BaseIntField):
 
     min_value = -2**7

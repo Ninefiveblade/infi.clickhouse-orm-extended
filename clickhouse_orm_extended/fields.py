@@ -336,6 +336,34 @@ class UInt64Field(BaseIntField):
     db_type = 'UInt64'
 
 
+class HierarchicalUInt64Field(BaseIntField):
+
+    min_value = 0
+    max_value = 2**64 - 1
+    db_type = 'UInt64 HIERARCHICAL'
+
+
+class HierarchicalUInt32Field(BaseIntField):
+
+    min_value = 0
+    max_value = 2**32 - 1
+    db_type = 'UInt32 HIERARCHICAL'
+
+
+class HierarchicalUInt16Field(BaseIntField):
+
+    min_value = 0
+    max_value = 2**16 - 1
+    db_type = 'UInt16 HIERARCHICAL'
+
+
+class HierarchicalUInt16Field(BaseIntField):
+
+    min_value = 0
+    max_value = 2**16 - 1
+    db_type = 'UInt16 HIERARCHICAL'
+
+
 class Int8Field(BaseIntField):
 
     min_value = -2**7
@@ -668,6 +696,11 @@ class LowCardinalityField(Field):
         if with_default_expression:
             sql += self._extra_params(db)
         return sql
+
+
+class BooleanField(Field):
+    # The ClickHouse column type to use
+    db_type = 'Bool'
 
 
 # Expose only relevant classes in import *

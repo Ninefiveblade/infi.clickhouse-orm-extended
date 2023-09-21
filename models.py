@@ -1,6 +1,6 @@
 from __future__ import unicode_literals
-import sys
 from typing import Union
+import sys
 from collections import OrderedDict
 from itertools import chain
 from logging import getLogger
@@ -17,7 +17,6 @@ from .engines import (Merge, Distributed,
                       HashedDictionaryLayout, ComplexKeyHashedDictionaryLayout)
 
 logger = getLogger('clickhouse_orm')
-
 
 
 class Constraint:
@@ -397,8 +396,8 @@ class Dictionary(metaclass=ModelBase):
         '''
         Returns the SQL command for deleting this model's table.
         '''
-        if cls.cluster_name is not None:
-            return 'DROP DICTIONARY IF EXISTS `%s`.`%s` ON CLUSTER `%s`' % (db.db_name, cls.table_name(), cls.cluster_name)
+        if db.cluster_name is not None:
+            return 'DROP DICTIONARY IF EXISTS `%s`.`%s` ON CLUSTER `%s`' % (db.db_name, cls.table_name(), db.cluster_name)
         return 'DROP DICTIONARY IF EXISTS `%s`.`%s`' % (db.db_name, cls.table_name())
 
     @classmethod
@@ -721,6 +720,25 @@ class Model(metaclass=ModelBase):
         Returns true if the model represents a system table.
         '''
         return cls._system
+
+
+class RemoteModel(Model):
+
+    @classmethod
+    def create_table_sql(cls, db):
+        '''
+        Returns the SQL statement for creating a table for this model.
+        '''
+        if db.cluster_name is not None:
+            parts = ["CREATE TABLE IF NOT EXISTS `%s`.`%s` ON CLUSTER '%s' AS %s" % (db.db_name,
+                                                                                     cls.table_name(),
+                                                                                     db.cluster_name,
+                                                                                     cls.engine.create_table_sql(db))]
+        else:
+            parts = ['CREATE TABLE IF NOT EXISTS `%s`.`%s` AS %s' % (db.db_name,
+                                                                     cls.table_name(),
+                                                                     cls.engine.create_table_sql(db))]
+        return ' '.join(parts)
 
 
 class BufferModel(Model):
