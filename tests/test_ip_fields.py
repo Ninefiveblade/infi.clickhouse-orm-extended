@@ -1,9 +1,9 @@
 import unittest
 from ipaddress import IPv4Address, IPv6Address
-from infi.clickhouse_orm.database import Database
-from infi.clickhouse_orm.fields import Int16Field, IPv4Field, IPv6Field
-from infi.clickhouse_orm.models import Model
-from infi.clickhouse_orm.engines import Memory
+from infi.clickhouse_orm_extended.database import Database
+from infi.clickhouse_orm_extended.fields import Int16Field, IPv4Field, IPv6Field
+from infi.clickhouse_orm_extended.models import Model
+from infi.clickhouse_orm_extended.engines import Memory
 
 
 class IPFieldsTest(unittest.TestCase):

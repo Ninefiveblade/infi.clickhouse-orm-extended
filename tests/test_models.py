@@ -2,10 +2,10 @@ import unittest
 import datetime
 import pytz
 
-from infi.clickhouse_orm.models import Model, NO_VALUE
-from infi.clickhouse_orm.fields import *
-from infi.clickhouse_orm.engines import *
-from infi.clickhouse_orm.funcs import F
+from infi.clickhouse_orm_extended.models import Model, NO_VALUE
+from infi.clickhouse_orm_extended.fields import *
+from infi.clickhouse_orm_extended.engines import *
+from infi.clickhouse_orm_extended.funcs import F
 
 
 class ModelTestCase(unittest.TestCase):

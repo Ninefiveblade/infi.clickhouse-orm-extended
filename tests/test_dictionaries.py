@@ -1,7 +1,7 @@
 import unittest
 import logging
 
-from infi.clickhouse_orm import *
+from infi.clickhouse_orm_extended import *
 
 
 class DictionaryTestMixin:

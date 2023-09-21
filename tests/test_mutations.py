@@ -1,5 +1,5 @@
 import unittest
-from infi.clickhouse_orm import F
+from infi.clickhouse_orm_extended import F
 from .base_test_with_data import *
 from time import sleep
 

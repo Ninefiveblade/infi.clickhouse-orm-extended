@@ -1,5 +1,5 @@
 import unittest
-from infi.clickhouse_orm.fields import *
+from infi.clickhouse_orm_extended.fields import *
 from datetime import date, datetime
 import pytz
 

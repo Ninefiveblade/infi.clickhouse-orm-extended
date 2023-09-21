@@ -1,6 +1,6 @@
 import datetime
 
-from infi.clickhouse_orm import migrations
+from infi.clickhouse_orm_extended import migrations
 from test_migrations import Model3
 
 

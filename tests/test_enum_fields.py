@@ -1,9 +1,9 @@
 import unittest
 
-from infi.clickhouse_orm.database import Database
-from infi.clickhouse_orm.models import Model
-from infi.clickhouse_orm.fields import *
-from infi.clickhouse_orm.engines import *
+from infi.clickhouse_orm_extended.database import Database
+from infi.clickhouse_orm_extended.models import Model
+from infi.clickhouse_orm_extended.fields import *
+from infi.clickhouse_orm_extended.engines import *
 
 from enum import Enum
 

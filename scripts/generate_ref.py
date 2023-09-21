@@ -120,13 +120,13 @@ def all_subclasses(cls):
 
 if __name__ == '__main__':
 
-    from infi.clickhouse_orm import database
-    from infi.clickhouse_orm import fields
-    from infi.clickhouse_orm import engines
-    from infi.clickhouse_orm import models
-    from infi.clickhouse_orm import query
-    from infi.clickhouse_orm import funcs
-    from infi.clickhouse_orm import system_models
+    from infi.clickhouse_orm_extended import database
+    from infi.clickhouse_orm_extended import fields
+    from infi.clickhouse_orm_extended import engines
+    from infi.clickhouse_orm_extended import models
+    from infi.clickhouse_orm_extended import query
+    from infi.clickhouse_orm_extended import funcs
+    from infi.clickhouse_orm_extended import system_models
 
     print('Class Reference')
     print('===============')

@@ -1,4 +1,4 @@
-from infi.clickhouse_orm import Model, DateTimeField, UInt16Field, Float32Field, Memory
+from infi.clickhouse_orm_extended import Model, DateTimeField, UInt16Field, Float32Field, Memory
 
 
 class CPUStats(Model):

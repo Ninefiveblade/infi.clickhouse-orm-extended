@@ -1,10 +1,10 @@
 import unittest
 
-from infi.clickhouse_orm.database import Database, ServerError
-from infi.clickhouse_orm.models import Model, BufferModel, Constraint, Index
-from infi.clickhouse_orm.fields import *
-from infi.clickhouse_orm.engines import *
-from infi.clickhouse_orm.migrations import MigrationHistory
+from infi.clickhouse_orm_extended.database import Database, ServerError
+from infi.clickhouse_orm_extended.models import Model, BufferModel, Constraint, Index
+from infi.clickhouse_orm_extended.fields import *
+from infi.clickhouse_orm_extended.engines import *
+from infi.clickhouse_orm_extended.migrations import MigrationHistory
 
 from enum import Enum
 # Add tests to path so that migrations will be importable

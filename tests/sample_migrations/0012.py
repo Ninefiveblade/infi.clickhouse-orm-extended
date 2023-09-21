@@ -1,4 +1,4 @@
-from infi.clickhouse_orm import migrations
+from infi.clickhouse_orm_extended import migrations
 
 operations = [
     migrations.RunSQL("INSERT INTO `mig` (date, f1, f3, f4) VALUES ('2016-01-01', 1, 1, 'test') "),
