@@ -21,7 +21,7 @@ class SourceClickhouse:
     db: str
 
     def create_sql(self):
-        sql = 'SOURCE(CLICKHOUSE(HOST %s PORT %d TABLE %s USER %s PASSWORD %s DB %s))' % (self.host, self.port,
+        sql = "SOURCE(CLICKHOUSE(HOST '%s' PORT %d TABLE '%s' USER '%s' PASSWORD '%s' DB '%s'))" % (self.host, self.port,
                                                                                           self.table, self.user,
                                                                                           self.password, self.db)
         return sql
@@ -33,7 +33,7 @@ class SourcePostgreSQL(SourceClickhouse):
     Source for PostgreSQL table or dictionary
     """
     def create_sql(self):
-        sql = 'SOURCE(POSTGRESQL(DB %s PORT %d HOST %s USER %s TABLE %s PASSWORD %s))' % (self.db, self.port,
+        sql = "SOURCE(POSTGRESQL(DB '%s' PORT %d HOST '%s' USER '%s' TABLE '%s' PASSWORD '%s'))" % (self.db, self.port,
                                                                                           self.host, self.user,
                                                                                           self.table, self.password)
         return sql
@@ -108,6 +108,40 @@ class Memory(Engine):
 
     def create_table_sql(self, db):
         return 'Memory'
+
+
+class PostgreSQL(Engine):
+
+    def __init__(self, host, port, db, table, user, password):
+        self.host = host
+        self.port = port
+        self.db = db
+        self.table = table
+        self.user = user
+        self.password = password
+
+    def create_table_sql(self, db):
+        sql = "PostgreSQL('%s:%d','%s','%s','%s','%s')" % (self.host, self.port,
+                                                           self.db, self.table,
+                                                           self.user, self.password)
+        return sql
+
+
+class RemoteClickhouse(Engine):
+
+    def __init__(self, host, port, db, table, user, password):
+        self.host = host
+        self.port = port
+        self.db = db
+        self.table = table
+        self.user = user
+        self.password = password
+
+    def create_table_sql(self, db):
+        sql = "remote('%s:%d','%s','%s','%s','%s')" % (self.host, self.port,
+                                                       self.db, self.table,
+                                                       self.user, self.password)
+        return sql
 
 
 class MergeTree(Engine):

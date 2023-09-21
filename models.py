@@ -8,7 +8,7 @@ from logging import getLogger
 import pytz
 
 from .fields import Field, StringField
-from .utils import parse_tsv, NO_VALUE, get_subclass_names, arg_to_sql, unescape
+from .utils import parse_tsv, NO_VALUE, get_subclass_names, arg_to_sql, unescape, comma_join
 from .query import QuerySet
 from .funcs import F
 from .engines import (Merge, Distributed,
@@ -259,27 +259,25 @@ class ModelBase(type):
 class Dictionary(metaclass=ModelBase):
     '''
     A base class for ORM models that represent ClickHouse dictionaries.
-
     sample:
-
     '''
 
     source: Union[SourceClickhouse, SourcePostgreSQL]
     layout: Union[FlatDictionaryLayout, HashedDictionaryLayout, ComplexKeyHashedDictionaryLayout]
     lifetime: DictionaryLifetime
-    cluster_name: str = None
     _database = None
+    _readonly = False
+    _system = False
+    primary_key: Union[str, tuple]
 
-    def __init__(self, primary_key: Union[str, tuple], **kwargs):
+    def __init__(self, **kwargs):
         '''
         Creates a model instance, using keyword arguments as field values.
         Since values are immediately converted to their Pythonic type,
         invalid values will cause a `ValueError` to be raised.
         Unrecognized field names will cause an `AttributeError`.
         '''
-        assert primary_key is None or type(primary_key) in (list, tuple), 'primary_key must be a list or tuple'
-        self.primary_key = primary_key
-        super(Model, self).__init__()
+        super(Dictionary, self).__init__()
         # Assign default values
         self.__dict__.update(self._defaults)
         # Assign field values from keyword arguments
@@ -304,7 +302,7 @@ class Dictionary(metaclass=ModelBase):
                 tp, v, tb = sys.exc_info()
                 new_msg = "{} (field '{}')".format(v, name)
                 raise tp.with_traceback(tp(new_msg), tb)
-        super(Model, self).__setattr__(name, value)
+        super(Dictionary, self).__setattr__(name, value)
 
     def set_database(self, db):
         '''
@@ -340,11 +338,11 @@ class Dictionary(metaclass=ModelBase):
         return self._fields.get(name)
 
     @classmethod
-    def dictionary_name(cls):
+    def table_name(cls) -> None:
         '''
         Returns the model's database table name. By default this is the
         class name converted to lowercase. Override this if you want to use
-        a different table name.
+        a different dictionary name.
         '''
         return cls.__name__.lower()
 
@@ -361,20 +359,20 @@ class Dictionary(metaclass=ModelBase):
         '''
         Reloads the dictionary from its source.
         '''
-        if cls.cluster_name is not None:
-            return 'SYSTEM RELOAD DICTIONARY `%s`.`%s` ON CLUSTER `%s`' % (db.db_name, cls.dictionary_name(), cls.cluster_name)
-        return 'SYSTEM RELOAD DICTIONARY `%s`.`%s`' % (db.db_name, cls.dictionary_name())
+        if db.cluster_name is not None:
+            return 'SYSTEM RELOAD DICTIONARY `%s`.`%s` ON CLUSTER `%s`' % (db.db_name, cls.table_name(), db.cluster_name)
+        return 'SYSTEM RELOAD DICTIONARY `%s`.`%s`' % (db.db_name, cls.table_name())
 
     @classmethod
     def create_dictionary_sql(cls, db):
         '''
         Returns the SQL statement for creating a table for this model.
         '''
-
-        if cls.cluster_name is not None:
-            parts = ['CREATE DICTIONARY IF NOT EXISTS `%s`.`%s` ON CLUSTER `%s` (' % (db.db_name, cls.dictionary_name(), cls.cluster_name)]
+        assert cls.primary_key is None or type(cls.primary_key) in (list, tuple), 'primary_key must be a list or tuple'
+        if db.cluster_name is not None:
+            parts = ['CREATE DICTIONARY IF NOT EXISTS `%s`.`%s` ON CLUSTER `%s` (' % (db.db_name, cls.table_name(), db.cluster_name)]
         else:
-            parts = ['CREATE DICTIONARY IF NOT EXISTS `%s`.`%s` (' % (db.db_name, cls.dictionary_name())]
+            parts = ['CREATE DICTIONARY IF NOT EXISTS `%s`.`%s` (' % (db.db_name, cls.table_name())]
         # Fields
         items = []
         for name, field in cls.fields().items():
@@ -399,9 +397,58 @@ class Dictionary(metaclass=ModelBase):
         '''
         Returns the SQL command for deleting this model's table.
         '''
-        if cls.cluster is not None:
-            return 'DROP DICTIONARY IF EXISTS `%s`.`%s` ON CLUSTER `%s`' % (db.db_name, cls.dictionary_name(), cls.cluster)
-        return 'DROP DICTIONARY IF EXISTS `%s`.`%s`' % (db.db_name, cls.dictionary_name())
+        if cls.cluster_name is not None:
+            return 'DROP DICTIONARY IF EXISTS `%s`.`%s` ON CLUSTER `%s`' % (db.db_name, cls.table_name(), cls.cluster_name)
+        return 'DROP DICTIONARY IF EXISTS `%s`.`%s`' % (db.db_name, cls.table_name())
+
+    @classmethod
+    def from_tsv(cls, line, field_names, timezone_in_use=pytz.utc, database=None):
+        '''
+        Create a model instance from a tab-separated line. The line may or may not include a newline.
+        The `field_names` list must match the fields defined in the model, but does not have to include all of them.
+
+        - `line`: the TSV-formatted data.
+        - `field_names`: names of the model fields in the data.
+        - `timezone_in_use`: the timezone to use when parsing dates and datetimes. Some fields use their own timezones.
+        - `database`: if given, sets the database that this instance belongs to.
+        '''
+        values = iter(parse_tsv(line))
+        kwargs = {}
+        for name in field_names:
+            field = getattr(cls, name)
+            field_timezone = getattr(field, 'timezone', None) or timezone_in_use
+            kwargs[name] = field.to_python(next(values), field_timezone)
+
+        obj = cls(**kwargs)
+        if database is not None:
+            obj.set_database(database)
+
+        return obj
+
+    def to_tsv(self, include_readonly=True):
+        '''
+        Returns the instance's column values as a tab-separated line. A newline is not included.
+
+        - `include_readonly`: if false, returns only fields that can be inserted into database.
+        '''
+        data = self.__dict__
+        fields = self.fields(writable=not include_readonly)
+        return '\t'.join(field.to_db_string(data[name], quote=False) for name, field in fields.items())
+
+    def to_tskv(self, include_readonly=True):
+        '''
+        Returns the instance's column keys and values as a tab-separated line. A newline is not included.
+        Fields that were not assigned a value are omitted.
+
+        - `include_readonly`: if false, returns only fields that can be inserted into database.
+        '''
+        data = self.__dict__
+        fields = self.fields(writable=not include_readonly)
+        parts = []
+        for name, field in fields.items():
+            if data[name] != NO_VALUE:
+                parts.append(name + '=' + field.to_db_string(data[name], quote=False))
+        return '\t'.join(parts)
 
     def to_db_string(self):
         '''
@@ -432,6 +479,20 @@ class Dictionary(metaclass=ModelBase):
         Returns a `QuerySet` for selecting instances of this model class.
         '''
         return QuerySet(cls, database)
+
+    @classmethod
+    def is_read_only(cls):
+        '''
+        Returns true if the model is marked as read only.
+        '''
+        return cls._readonly
+
+    @classmethod
+    def is_system_model(cls):
+        '''
+        Returns true if the model represents a system table.
+        '''
+        return cls._system
 
 
 class Model(metaclass=ModelBase):
