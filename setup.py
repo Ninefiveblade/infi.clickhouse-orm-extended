@@ -7,7 +7,7 @@ setup(
     author_email='ivan_alexeev@realytics.team',
     description='Extended version of infi.clickhouse-orm',
     url='https://github.com/Ninefiveblade/infi.clickhouse-orm-extended',
-    packages=['infi.clickhouse_orm_extended'],
+    packages=['infi.clickhouse-orm-extended'],
     python_requires='>=3.9',
     install_requires=[
         'iso8601 >= 0.1.12',
