@@ -12,6 +12,7 @@ setup(
     install_requires=[
         'iso8601 >= 0.1.12',
         'pytz',
+        'aioch',
         'requests',
         'setuptools'
     ],
