@@ -13,6 +13,7 @@ setup(
         'iso8601 >= 0.1.12',
         'pytz',
         'aioch',
+        'clickhouse-driver',
         'requests',
         'setuptools'
     ],
